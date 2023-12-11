@@ -106,7 +106,7 @@ rule mpileup:
 
 rule varscan:
      input: "all_samples.mpileup"
-     output:
+     output: "all_samples.vcf"
      params: pvalue=config['varscan_pvalue']
      conda: "envs/varscan.yaml"
      message: "Identifying statistically significant SNPs with VarScan"
