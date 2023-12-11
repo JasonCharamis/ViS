@@ -1,0 +1,116 @@
+import os
+import re
+import subprocess
+import itertools
+
+
+include: "snakemake_utils.smk"
+
+
+#=============================================================== Pipeline Configuration ======================================================================#
+
+if is_docker():
+    configfile: str(find_repository_name(start_dir=".")) + "/config/config.yaml"
+else:
+    configfile: str(find_workflow_path(dir=".")) + "config/config.yaml"
+
+## Wildcards
+read_directory_path = config['read_dir']
+
+# Create a set of sample names by combining the directory name and file prefixes
+samples = sorted({os.path.basename(read_directory_path) + "/" + f[:-8] for f in os.listdir(read_directory_path) if f.endswith(".fastq")})
+
+groups = list(set((re.sub(".*/", "", s) for s in samples)))
+
+#==================================================================== RULE ALL ============================================================================#
+
+rule all:
+    input: "all_samples.vcf"
+
+#=============================================================== FASTQC AND TRIMMING =======================================================================#
+
+rule fastqc:
+    input:
+        r1='{sample}_1.fastq.gz',
+        r2='{sample}_2.fastq.gz'
+
+    output: "fastqc/{sample}_fastqc/fastqc_report.html"
+    conda: "envs/varscan.yaml"
+    threads: 1
+
+    shell:
+        """ mkdir -p fastqc && 
+	    fastqc {input.r1} -t {threads} && 
+            fastqc {input.r2} -t {threads} """
+
+
+rule download_trimmomatic_adapters:
+    output: "TruSeq3-PE.fa"
+    shell: """ wget -O TruSeq3-PE.fa 'https://raw.githubusercontent.com/usadellab/Trimmomatic/main/adapters/TruSeq3-PE.fa' """
+    
+
+rule trim_reads:
+    input:
+        adapters='TruSeq3-PE.fa',
+        r1='{sample}_1.fastq.gz',
+        r2='{sample}_2.fastq.gz',
+    output:
+        r1_trimmed='{sample}_1.trimmed.fastq.gz',
+        r2_trimmed='{sample}_2.trimmed.fastq.gz',
+        r1_garbage=temp('{sample}_1.garbage.fastq.gz'),
+        r2_garbage=temp('{sample}_2.garbage.fastq.gz')
+    conda: "envs/varscan.yaml"
+    threads: config['trimmomatic_threads']
+    message: "Adapter-trimming reads"
+    shell:
+        """ trimmomatic PE -threads {threads} {input.r1} {input.r2} {output.r1_trimmed} {output.r1_garbage} {output.r2_trimmed} {output.r2_garbage} ILLUMINACLIP:{input.adapters}:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:50 """
+
+
+#==================================================================== MAPPING =============================================================================#
+
+rule build_genome_index:
+    output: 'index_chkp'
+    conda: "envs/varscan.yaml"
+    threads: config['star_build_threads']
+    message: "Building genome index"
+    params:
+        genome_fasta=config['genome_fasta'],
+        gtf=config['gtf']
+    shell:
+        """ mkdir genome/ && STAR --runThreadN {threads} --runMode genomeGenerate --genomeDir genome/ --genomeFastaFiles {params.genome_fasta} --sjdbGTFfile {params.gtf} --sjdbOverhang 149 && touch index_chkp """
+
+
+rule mapping:
+    input:
+        ch='index_chkp',
+        r1='{sample}_1.fastq',
+        r2='{sample}_2.fastq',
+    output: '{sample}.Aligned.sortedByCoord.out.bam'
+    conda: "envs/varscan.yaml"
+    message: "Mapping reads to genome and convert to sorted BAM"
+    threads: config['star_map_threads']
+    shell:
+        """ STAR --runThreadN {threads} --readFilesIn {input.r1} {input.r2} --genomeDir genome/ --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {wildcards.sample}. """
+
+
+rule mpileup:
+     input:
+	bams=expand('{sample}.Aligned.sortedByCoord.out.bam', sample = samples ),
+	genome=config['genome_fasta']
+     	    
+     output: "all_samples.mpileup"
+     conda: "envs/varscan.yaml"
+     message: "Generating pileup file"
+     shell: """ samtools mpileup -f {input.genome} -o {output} {input.bams} """
+
+
+rule varscan:
+     input: "all_samples.mpileup"
+     output:
+     params: pvalue=config['varscan_pvalue']
+     conda: "envs/varscan.yaml"
+     message: "Identifying statistically significant SNPs with VarScan"
+
+     shell: """ varscan mpileup2snp {input} --p-value 0.01 --output-vcf 1 --output all_samples.vcf """
+
+

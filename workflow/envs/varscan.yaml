@@ -1,0 +1,15 @@
+name: rnaseq
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - fastqc
+    - trimmomatic
+    - star
+    - gzip
+    - samtools
+    - varscan
+    
+env:
+  PATH:
+    - scripts/

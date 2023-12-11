@@ -1,0 +1,3 @@
+read_dir: "example"
+genome_fasta: "example/dm6.fa"
+varscan_pvalue: 0.0001
