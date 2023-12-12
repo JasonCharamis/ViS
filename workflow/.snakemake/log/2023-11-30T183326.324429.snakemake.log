@@ -1,3 +1,0 @@
-KeyError in file /home/jason/bin/ARuS/workflow/Snakefile, line 273:
-'gene_info'
-  File "/home/jason/bin/ARuS/workflow/Snakefile", line 273, in <module>

@@ -1,3 +1,0 @@
-FileNotFoundError in file /home/jason/bin/Automated-RNAseq-analysis-using-Snakemake/workflow/Snakefile, line 54:
-[Errno 2] No such file or directory: 'reads/'
-  File "/home/jason/bin/Automated-RNAseq-analysis-using-Snakemake/workflow/Snakefile", line 54, in <module>
