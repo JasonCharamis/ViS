@@ -1,10 +1,6 @@
 # ViS (Variant identification using Snakemake)
-Fully automated Snakemake pipeline for variant identification from RNAseq data
-
-Fully automated RNAseq pipeline for identifying SNPs from RNAseq data using VarScan2. 
-The pipeline is also available as a Docker image. 
-
-To run:
+Fully automated RNAseq pipeline for identifying SNPs from RNAseq data using VarScan2.  
+The pipeline is also available as a Docker image, to run all steps automatically in a few steps:
 
 **1. Build Docker image**  
 git clone https://github.com/JasonCharamis/ViS.git &&\  
