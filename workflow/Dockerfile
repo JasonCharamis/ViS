@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 
 LABEL maintainer = "Jason Charamis" 
 LABEL contact    = "jason.charamis@gmail.com"
-LABEL build_date = "2023-11-30"
+LABEL build_date = "2023-12-12"
 LABEL version    = "v.0.0.1-dev"
 
 # Set environment variables for non-interactive installation of R
@@ -41,14 +41,11 @@ RUN /conda-envs/rnaseq/bin/pip3 install wheel && \
     /conda-envs/rnaseq/bin/pip3 install snakemake
 
 RUN git clone https://github.com/JasonCharamis/ViS.git
-
-RUN curl -O -L https://raw.githubusercontent.com/trinityrnaseq/trinityrnaseq/master/Analysis/DifferentialExpression/run_DE_analysis.pl &&\
-    curl -O -L https://raw.githubusercontent.com/trinityrnaseq/trinityrnaseq/master/Analysis/DifferentialExpression/analyze_diff_expr.pl
-    
+  
 RUN mv *.pl ViS/workflow/scripts
 
 ENV PATH="~/.local:$PATH"
 ENV PATH="ViS:$PATH"
 ENV PATH="ViS/workflow/scripts:$PATH"
-ENV PATH="/conda-envs/rnaseq/bin:$PATH"
+ENV PATH="/conda-envs/varscan/bin:$PATH"
 ENV PATH="/usr/lib/R/bin:$PATH"
