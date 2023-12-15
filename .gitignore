@@ -12,3 +12,5 @@
 
 # Hidden directories
 *.snakemake*
+
+*.log
