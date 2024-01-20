@@ -113,6 +113,6 @@ rule varscan:
      conda: "envs/varscan.yaml"
      message: "Identifying statistically significant SNPs with VarScan"
 
-     shell: """ Varscan mpileup2snp {input} --p-value 0.01 --output-vcf 1 --output all_samples.vcf """
+     shell: """ varscan mpileup2snp {input} --p-value 0.01 --output-vcf 1 --output all_samples.vcf """
 
 
